@@ -1,0 +1,106 @@
+@startuml deployment-diagram-mars
+title Deployment diagram (full) — MARS on OpenStack (project ens0insa-tp6-04)
+
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 60
+skinparam defaultTextAlignment center
+left to right direction
+
+actor "Researcher" as researcher
+actor "Dev team\n(admin)" as dev
+
+cloud "Public online sources\n(official APIs, public web pages)" as sources
+
+cloud "GitHub" as github {
+    component "MARS repository" as repo
+    component "GitHub Actions\n(CI/CD)" as gha
+    artifact "GHCR\n(Docker images)" as ghcr
+}
+
+node "OpenStack — ens0insa-tp6-04\n6 instances · 24 vCPU · 24 GB RAM · 2 floating IPs" as openstack {
+
+    node "Private network (10.0.0.0/24)" as lan {
+
+        node "VM1 · mars-web\n2 vCPU · 2 GB\nFloating IP #1" as vm1 <<Ubuntu + Docker>> {
+            component "Nginx\n(reverse proxy, TLS)" as nginx
+            artifact "React frontend\n(static build)" as react
+        }
+
+        node "VM2 · mars-api\n3 vCPU · 3 GB" as vm2 <<Ubuntu + Docker>> {
+            component "FastAPI\n(JWT auth, CSV upload,\nresults, sorting)" as api
+        }
+
+        node "VM3 · mars-scraper\n4 vCPU · 4 GB" as vm3 <<Ubuntu + Docker>> {
+            component "Scraping service\n(API clients + headless\nbrowser, rate limiting)" as scraper
+            component "Scheduler\n(recurring queries)" as scheduler
+        }
+
+        node "VM4 · mars-analysis\n8 vCPU · 8 GB" as vm4 <<Ubuntu + Docker>> {
+            component "Pipeline\n(preprocessing +\nDIMA / DISARM analysis)" as pipeline
+            component "ML service\n(classification,\nseverity score)\nlater phase" as ml #EEEEEE
+        }
+
+        node "VM5 · mars-db\n4 vCPU · 4 GB" as vm5 <<Ubuntu + Docker>> {
+            database "PostgreSQL\n• researcher accounts\n• preprocessed data\n• analyzed data" as db
+            storage "Cinder volume\n(data + backups)" as vol
+        }
+
+        node "VM6 · mars-ops\n3 vCPU · 3 GB\nFloating IP #2" as vm6 <<Ubuntu + Docker>> {
+            component "SSH bastion" as bastion
+            component "Self-hosted GitHub\nrunner + Ansible" as runner
+            component "Monitoring\n(logs, health checks)" as monitor
+        }
+    }
+}
+
+' --- External access
+researcher --> nginx : HTTPS 443\n(account required)
+dev --> bastion : SSH 22\n(keys, IP allowlist)
+
+' --- Frontend / API
+nginx --> react : serves files
+nginx --> api : /api/* → HTTP 8000
+
+' --- Collection
+api --> scraper : starts a collection\njob (HTTP)
+scheduler --> scraper : triggers\nrecurring queries
+scraper --> sources : HTTPS outbound\n(via OpenStack router,\nrate-limited)
+scraper --> db : raw collected data
+scraper --> pipeline : notifies new\nImport (HTTP)
+
+' --- Analysis
+api --> pipeline : analyzes an\nuploaded CSV (HTTP)
+pipeline --> ml : prediction\nDIMA / DISARM (HTTP)
+
+' --- Database access (private network only)
+api --> db : SQL 5432
+pipeline --> db : SQL 5432
+ml --> db : SQL 5432
+db --> vol
+
+' --- CI/CD
+repo --> gha : push / PR
+gha --> ghcr : build & push
+runner --> gha : polls jobs
+runner --> vm1 : deploys (Ansible\n+ docker compose)
+runner --> vm2
+runner --> vm3
+runner --> vm4
+runner --> vm5
+
+note right of ghcr
+  Each VM pulls the image
+  tagged with the commit SHA
+end note
+
+note bottom of lan
+  OpenStack security groups:
+  • VM1: only ports 443 (and 80 → redirect) open to the Internet
+  • VM6: port 22 open only to the team's IPs
+  • VM2 to VM5: no public IP, reachable only from the private network
+  • VM3: outbound HTTPS allowed (scraping), no inbound from the Internet
+  • PostgreSQL (5432): accepted only from VM2, VM3 and VM4
+end note
+
+@enduml

@@ -1,0 +1,36 @@
+@startuml architecture-mars-v1
+!include <C4/C4_Container>
+
+LAYOUT_TOP_DOWN()
+title MARS application architecture — version 1
+
+Person(researcher, "Researcher", "Actor")
+
+System_Ext(youtube, "YouTube", "Videos and comments")
+System_Ext(socials, "Social networks", "Posts and replies")
+
+System_Boundary(mars, "MARS") {
+    Container(frontend, "Frontend", "Streamlit, Python", "Researcher interface")
+    Container(api, "API (Backend)", "FastAPI, Python", "Orchestration")
+    Container(ingestion, "Ingestion", "Python", "Transcription and collection")
+    Container(pipeline, "Pipeline", "Python", "Rule-based scoring")
+    Container(ml, "ML", "Python, scikit-learn", "Training and prediction")
+    ContainerDb(data, "Data", "PostgreSQL", "Documents, scores, decisions, models")
+}
+
+Rel(researcher, frontend, "Uploads, browses and corrects")
+BiRel(frontend, api, "HTTP / JSON")
+
+Rel(api, ingestion, "Triggers collection", "HTTP")
+Rel(api, pipeline, "Triggers scoring", "HTTP")
+BiRel(api, ml, "Requests a prediction", "HTTP")
+BiRel(api, data, "Results, jobs and decisions")
+
+Rel(ingestion, youtube, "Transcribes and extracts comments")
+Rel(ingestion, socials, "Scrapes posts and replies")
+Rel(ingestion, data, "Writes structured documents")
+
+BiRel(pipeline, data, "Texts, lexicon and scores")
+BiRel(ml, data, "Annotations and versioned models")
+
+@enduml

@@ -1,0 +1,176 @@
+@startuml class-diagram-mars
+title Class diagram — MARS data model (PostgreSQL)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide empty methods
+
+' ============================================================
+' 1. Researcher accounts
+' ============================================================
+package "Researcher accounts" #F2F6FC {
+
+    enum Role {
+        RESEARCHER
+        ADMIN
+    }
+
+    class User {
+        - id : UUID
+        - email : String {unique}
+        - fullName : String
+        - passwordHash : String
+        - role : Role
+        - active : Boolean
+        - createdAt : DateTime
+        - lastLoginAt : DateTime [0..1]
+    }
+}
+
+' ============================================================
+' 2. Preprocessed data (CSV upload or online collection)
+' ============================================================
+package "Preprocessed data" #F4FAF2 {
+
+    enum SourceType {
+        CSV_FILE
+        ONLINE
+    }
+
+    enum Platform {
+        YOUTUBE
+        REDDIT
+        MASTODON
+        BLUESKY
+        PUBLIC_WEB
+    }
+
+    enum ImportStatus {
+        PENDING
+        COLLECTING
+        PREPROCESSING
+        ANALYZING
+        DONE
+        FAILED
+    }
+
+    class CollectionQuery {
+        - id : UUID
+        - platform : Platform
+        - keywords : String [1..*]
+        - dateFrom : DateTime [0..1]
+        - dateTo : DateTime [0..1]
+        - maxItems : Integer
+        - schedule : String [0..1]
+        - createdAt : DateTime
+    }
+
+    class Import {
+        - id : UUID
+        - sourceType : SourceType
+        - fileName : String [0..1]
+        - importedAt : DateTime
+        - status : ImportStatus
+        - totalRows : Integer
+        - rejectedRows : Integer
+        - errorMessage : String [0..1]
+    }
+
+    class PreprocessedData {
+        - id : UUID
+        - rawContent : Text
+        - cleanContent : Text
+        - language : String
+        - authorPseudonym : String [0..1]
+        - platform : Platform [0..1]
+        - sourceUrl : String [0..1]
+        - publishedAt : DateTime
+        - collectedAt : DateTime
+        - metadata : JSON
+    }
+}
+
+' ============================================================
+' 3. Analyzed data (DIMA + DISARM)
+' ============================================================
+package "Analyzed data" #FCF6F0 {
+
+    enum SeverityLevel {
+        LOW
+        MEDIUM
+        HIGH
+        CRITICAL
+    }
+
+    enum Framework {
+        DIMA
+        DISARM
+    }
+
+    class AnalyzedData {
+        - id : UUID
+        - severityScore : Float {0..100}
+        - severityLevel : SeverityLevel
+        - analyzedAt : DateTime
+        - modelVersion : String
+    }
+
+    class Detection {
+        - confidence : Float {0..1}
+        - excerpt : Text [0..1]
+    }
+
+    class Technique {
+        - code : String {unique per framework}
+        - framework : Framework
+        - name : String
+        - tactic : String
+        - description : Text
+    }
+}
+
+' ============================================================
+' Associations
+' ============================================================
+User "1" -- "0..*" Import : uploads >
+User "1" -- "0..*" CollectionQuery : creates >
+CollectionQuery "1" -- "0..*" Import : produces >
+Import "1" *-- "1..*" PreprocessedData : contains >
+PreprocessedData "1" -- "0..1" AnalyzedData : is analyzed into >
+AnalyzedData "1" *-- "0..*" Detection : has >
+Detection "0..*" --> "1" Technique : identifies >
+
+User ..> Role
+Import ..> SourceType
+Import ..> ImportStatus
+CollectionQuery ..> Platform
+AnalyzedData ..> SeverityLevel
+Technique ..> Framework
+
+note right of AnalyzedData
+  Frontend view: list of items with
+  their score, sortable by
+  • severity (severityScore DESC)
+  • publication date
+    (PreprocessedData.publishedAt)
+end note
+
+note left of CollectionQuery
+  Online collection (scraping):
+  one query can run once or on a
+  schedule (cron); each run
+  creates a new Import.
+end note
+
+note bottom of PreprocessedData
+  authorPseudonym: hashed author
+  identifier (GDPR data minimization).
+end note
+
+note bottom of Technique
+  Reference table loaded from
+  the DIMA and DISARM frameworks.
+end note
+
+@enduml

@@ -1,0 +1,79 @@
+@startuml roadmap-presentation-milestone-1
+!include <tupadr3/font-awesome-5/file_csv>
+!include <tupadr3/font-awesome-5/user_secret>
+!include <tupadr3/font-awesome-5/search>
+!include <tupadr3/font-awesome-5/smile>
+!include <tupadr3/font-awesome-5/tags>
+!include <tupadr3/font-awesome-5/sort_amount_down>
+!include <tupadr3/font-awesome-5/chart_bar>
+!include <tupadr3/font-awesome-5/youtube>
+!include <tupadr3/font-awesome-5/filter>
+!include <tupadr3/font-awesome-5/user_check>
+!include <tupadr3/font-awesome-5/project_diagram>
+!include <tupadr3/font-awesome-5/globe>
+!include <tupadr3/font-awesome-5/history>
+!include <tupadr3/font-awesome-5/book>
+!include <tupadr3/font-awesome-5/robot>
+!include <tupadr3/font-awesome-5/balance_scale>
+!include <tupadr3/font-awesome-5/bullseye>
+!include <tupadr3/font-awesome-5/flag_checkered>
+!include <logos/openstack>
+
+title MARS — Next objectives: from MVP to the research goal
+
+skinparam shadowing false
+skinparam defaultFontSize 22
+skinparam titleFontSize 36
+skinparam arrowThickness 3
+skinparam arrowColor #5B6B80
+skinparam arrowFontSize 20
+skinparam nodesep 40
+skinparam ranksep 50
+skinparam defaultTextAlignment left
+skinparam rectangleRoundCorner 20
+skinparam rectangle {
+    BorderThickness 3
+}
+skinparam rectangle<<mvp>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+}
+skinparam rectangle<<core>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+skinparam rectangle<<ext>> {
+    BackgroundColor #FFF8E1
+    BorderColor #B08A00
+    BorderStyle dashed
+}
+skinparam rectangle<<stretch>> {
+    BackgroundColor #F3E5F5
+    BorderColor #7B1FA2
+    BorderStyle dashed
+}
+skinparam rectangle<<goal>> {
+    BackgroundColor #263238
+    BorderColor #263238
+    FontColor #FFFFFF
+}
+hide stereotype
+
+rectangle "<size:34><color:#1565C0>**MVP**</color></size>   <back:#1565C0><color:#FFFFFF> COMMITTED </color></back>\n<size:20><color:#1565C0>Target: Milestones 3–4 (Jan. 2027) · deployed on **OpenStack**</color></size>\n\n<$file_csv>  Upload a corpus (CSV: transcripts, comments)\n<$user_secret>  Preprocessing + pseudonymisation\n<$search>  Strong signals (lexicon)\n<$smile>  Weak signals (emojis)\n<$tags>  DIMA / DISARM tagging (rules)\n<$chart_bar>  Graded score + explanatory terms\n<$sort_amount_down>  Sort by severity / date, lexical stats" as mvp <<mvp>>
+
+rectangle "<size:34><color:#2E7D32>**Core**</color></size>   <back:#2E7D32><color:#FFFFFF> COMMITTED </color></back>\n<size:20><color:#2E7D32>Target: Milestone 4 → final defense (28 Jan. 2027)</color></size>\n\n<$youtube>  Targeted YouTube collection (no names)\n<$tags>  Source · date · type · theme · score\n<$filter>  Sort by theme (defined with supervisors)\n<$user_check>  Learns from researchers' corrections\n<$chart_bar>  Labelled data + chart summary" as core <<core>>
+
+rectangle "<size:34><color:#B08A00>**Extended**</color></size>   <back:#B08A00><color:#FFFFFF> OPTIONAL </color></back>\n\n<$project_diagram>  Map of groups and their interactions\n<$globe>  Multi-platform collection\n<$book>  Updating the coded lexicons\n<$history>  Tracking over time: how a trend starts" as ext <<ext>>
+
+rectangle "<size:34><color:#7B1FA2>**Stretch**</color></size>   <back:#7B1FA2><color:#FFFFFF> OPTIONAL </color></back>\n\n<$robot>  LLM-assisted risk spotting\n      to prioritise what to review\n<$balance_scale>  Decision stays human;\n      contents analysed, never individuals" as stretch <<stretch>>
+
+rectangle "<$bullseye{scale=1.4}>   <size:30>**Research goal:**</size>  <size:26>help researchers identify online trends</size>\n<size:26>that lead to real-world harm, and trace how they started online</size>" as goal <<goal>>
+
+mvp -right-> core
+mvp -[hidden]down- ext
+core --> ext
+ext -right-> stretch
+ext -[hidden]down- goal
+stretch --> goal
+
+@enduml

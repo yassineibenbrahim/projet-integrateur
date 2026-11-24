@@ -1,0 +1,93 @@
+@startuml deployment-overview-presentation-milestone-1
+!include <logos/openstack>
+!include <logos/github-icon>
+!include <logos/nginx>
+!include <logos/react>
+!include <logos/python>
+!include <logos/postgresql>
+!include <logos/ansible>
+!include <tupadr3/font-awesome-5/user>
+!include <tupadr3/font-awesome-5/globe>
+!include <tupadr3/font-awesome-5/spider>
+!include <tupadr3/font-awesome-5/chart_bar>
+!include <tupadr3/font-awesome-5/lock>
+!include <tupadr3/font-awesome-5/network_wired>
+
+title MARS — Deployment overview on OpenStack
+
+skinparam shadowing false
+skinparam defaultFontSize 24
+skinparam titleFontSize 36
+skinparam arrowFontSize 22
+skinparam arrowThickness 2
+skinparam nodesep 60
+skinparam ranksep 90
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+skinparam rectangleRoundCorner 12
+
+skinparam node {
+    FontSize 26
+    BorderThickness 2
+}
+skinparam node<<openstack>> {
+    BackgroundColor #FFF5F6
+    BorderColor #DA1A32
+    BorderThickness 4
+    FontColor #DA1A32
+    FontSize 34
+    StereotypeFontSize 1
+    StereotypeFontColor #FFF5F6
+}
+skinparam node<<vm>> {
+    BackgroundColor #FFFFFF
+    BorderColor #DA1A32
+    StereotypeFontColor #DA1A32
+    StereotypeFontSize 20
+}
+skinparam node<<private>> {
+    BackgroundColor #F4F7FB
+    BorderColor #DA1A32
+    StereotypeFontColor #DA1A32
+    StereotypeFontSize 20
+}
+hide stereotype
+
+left to right direction
+
+rectangle "<$user{scale=1.6}>\nResearcher" as researcher #FFFFFF
+cloud "<$globe{scale=1.4}>\nOnline sources\n(official APIs,\npublic web)" as sources
+cloud "<$github-icon{scale=1.4}>\nGitHub\nActions + GHCR" as github
+
+node "<$openstack{scale=2.2}>\n<size:48>**OpenStack**</size>\n<size:24>6 VMs · 24 vCPU · 24 GB · 2 floating IPs</size>" as openstack <<openstack>> {
+
+    node "<color:#DA1A32><size:20>OpenStack VM</size></color>\n**mars-web**\n<size:20>floating IP #1</size>" as web <<vm>> {
+        rectangle "<$nginx{scale=1.1}>  <$react{scale=1.2}>\nNginx + React" as front
+    }
+
+    node "<color:#DA1A32><size:20><$network_wired> OpenStack private network</size></color>\n**Backend · 4 VMs**" as backend <<private>> {
+        rectangle "<$python{scale=1.4}>\nAPI\nFastAPI" as api
+        rectangle "<$spider{scale=1.4}>\nScraping" as scraper
+        rectangle "<$chart_bar{scale=1.4}>\nAnalysis\nDIMA / DISARM" as analysis
+        database "<$postgresql{scale=1.4}>\nPostgreSQL" as db
+    }
+
+    node "<color:#DA1A32><size:20>OpenStack VM</size></color>\n**mars-ops**\n<size:20>floating IP #2</size>" as ops <<vm>> {
+        rectangle "<$ansible{scale=1.2}>  <$lock{scale=1.4}>\nCI/CD runner\n+ SSH bastion" as runner
+    }
+}
+
+researcher --> front : HTTPS
+front --> api : /api
+api --> scraper
+api --> analysis
+scraper --> sources : HTTPS
+scraper --> analysis
+api --> db
+analysis --> db
+
+github --> runner : jobs
+runner --> backend : deploy
+runner --> web : deploy
+
+@enduml

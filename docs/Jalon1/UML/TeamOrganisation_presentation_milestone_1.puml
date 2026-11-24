@@ -1,0 +1,67 @@
+@startuml team-organisation-presentation-milestone-1
+!include <tupadr3/font-awesome-5/users>
+!include <tupadr3/font-awesome-5/database>
+!include <tupadr3/font-awesome-5/file_csv>
+!include <tupadr3/font-awesome-5/leaf>
+!include <tupadr3/font-awesome-5/balance_scale>
+!include <tupadr3/font-awesome-5/laptop_code>
+!include <tupadr3/font-awesome-5/brain>
+!include <tupadr3/font-awesome-5/project_diagram>
+!include <tupadr3/font-awesome-5/user>
+
+title MARS — Team organisation up to Milestone 1
+
+skinparam shadowing false
+skinparam defaultFontSize 24
+skinparam titleFontSize 36
+skinparam arrowThickness 2
+skinparam arrowColor #5B6B80
+skinparam nodesep 40
+skinparam ranksep 70
+skinparam defaultTextAlignment center
+skinparam rectangleRoundCorner 20
+skinparam rectangle {
+    BorderThickness 3
+}
+skinparam rectangle<<team>> {
+    BackgroundColor #F4F7FB
+    BorderColor #5B6B80
+}
+skinparam rectangle<<data>> {
+    BackgroundColor #E3F2FD
+    BorderColor #1565C0
+}
+skinparam rectangle<<eco>> {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+skinparam rectangle<<soft>> {
+    BackgroundColor #FFF3E0
+    BorderColor #EF6C00
+}
+skinparam rectangle<<ai>> {
+    BackgroundColor #F3E5F5
+    BorderColor #7B1FA2
+}
+hide stereotype
+
+rectangle "<$users{scale=1.8}>\n<size:34>**MARS — Team 4**</size>\n6 members · 4 work streams" as team <<team>>
+
+rectangle "<color:#1565C0><$database{scale=1.6}>  <$file_csv{scale=1.6}></color>\n<size:28><color:#1565C0>**Data**</color></size>\nExtraction +\ndata formatting\n\n<$user> **Othmane**" as data <<data>>
+
+rectangle "<color:#2E7D32><$leaf{scale=1.6}>  <$balance_scale{scale=1.6}></color>\n<size:28><color:#2E7D32>**Eco-design & compliance**</color></size>\nEco-design · GDPR (RGPD)\nAI Act · data sources\n\n<$user> **Nawfal**" as eco <<eco>>
+
+rectangle "<color:#EF6C00><$laptop_code{scale=1.6}></color>\n<size:28><color:#EF6C00>**Software engineering**</color></size>\nBackend + frontend\n\n\n<$user> **Erwan**   <$user> **Titouan**" as soft <<soft>>
+
+rectangle "<color:#7B1FA2><$brain{scale=1.6}>  <$project_diagram{scale=1.6}></color>\n<size:28><color:#7B1FA2>**AI**</color></size>\n**DIMA / DISARM**\nLLM · NLP · graphs\n\n<$user> **Yassine**   <$user> **Karim**" as ai <<ai>>
+
+team --> data
+team --> eco
+team --> soft
+team --> ai
+
+data -[hidden]right- eco
+eco -[hidden]right- soft
+soft -[hidden]right- ai
+
+@enduml

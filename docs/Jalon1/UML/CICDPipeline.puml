@@ -1,0 +1,133 @@
+@startuml cicd-pipeline-mars
+!include <logos/github-icon>
+!include <logos/github-actions>
+!include <logos/docker-icon>
+!include <logos/python>
+!include <logos/react>
+!include <logos/ansible>
+!include <logos/openstack>
+!include <tupadr3/font-awesome-5/code_branch>
+!include <tupadr3/font-awesome-5/shield_alt>
+!include <tupadr3/font-awesome-5/vial>
+!include <tupadr3/font-awesome-5/user_check>
+!include <tupadr3/font-awesome-5/tags>
+!include <tupadr3/font-awesome-5/database>
+!include <tupadr3/font-awesome-5/heartbeat>
+!include <tupadr3/font-awesome-5/check_circle>
+!include <tupadr3/font-awesome-5/undo>
+!include <tupadr3/font-awesome-5/ban>
+!include <tupadr3/font-awesome-5/search>
+!include <tupadr3/font-awesome-5/question_circle>
+
+title MARS — Target CI/CD pipeline (GitHub Actions → OpenStack)
+
+skinparam shadowing false
+skinparam defaultFontSize 24
+skinparam titleFontSize 36
+skinparam arrowFontSize 22
+skinparam arrowThickness 2
+skinparam nodesep 50
+skinparam ranksep 60
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+skinparam rectangleRoundCorner 12
+
+skinparam rectangle {
+    BackgroundColor #F1F1F1
+    BorderThickness 2
+}
+skinparam rectangle<<stage>> {
+    BackgroundColor #F4F7FB
+    BorderColor #5B6B80
+    FontSize 28
+    RoundCorner 20
+}
+skinparam rectangle<<openstack>> {
+    BackgroundColor #FFF5F6
+    BorderColor #DA1A32
+    BorderThickness 4
+    FontColor #DA1A32
+    FontSize 30
+    RoundCorner 20
+}
+skinparam rectangle<<ok>> {
+    BackgroundColor #E3F4E6
+    BorderColor #2E7D32
+}
+skinparam rectangle<<fail>> {
+    BackgroundColor #FDE7E7
+    BorderColor #C62828
+}
+skinparam rectangle<<decision>> {
+    BackgroundColor #FFF6D5
+    BorderColor #B08A00
+    RoundCorner 40
+}
+skinparam rectangle<<group>> {
+    BackgroundColor #FFFFFF
+    BorderColor #9AA5B1
+    BorderStyle dashed
+    FontSize 22
+}
+hide stereotype
+
+' ---------- 1. Developer ----------
+rectangle "**① Developer**" as dev <<stage>> {
+    rectangle "<$code_branch{scale=1.4}>\nfeature/* branch\ncommit + push" as push
+    rectangle "<$github-icon{scale=1.2}>\nOpen a Pull Request\nto main" as pr
+}
+
+' ---------- 2. CI ----------
+rectangle "<$github-actions{scale=1.2}>\n**② CI — every PR**" as ci <<stage>> {
+    rectangle "**Parallel checks**\n<$python{scale=0.8}>  ruff · mypy · pytest\n<$react{scale=0.8}>  ESLint · Prettier · Vitest\n<$shield_alt{scale=1.0}>  pip-audit · npm audit" as checks
+    rectangle "<$docker-icon{scale=1.2}>\nBuild Docker images\nfrontend · api\nscraper · analysis" as build
+    rectangle "<$vial{scale=1.4}>\nIntegration tests\ndocker compose + PostgreSQL\nsample CSV → results" as itest
+    rectangle "<$question_circle{scale=1.2}>\n**All green?**" as green <<decision>>
+    rectangle "<$ban{scale=1.4}>\nPR blocked" as blocked <<fail>>
+}
+
+' ---------- 3. Review ----------
+rectangle "**③ Review**" as rev <<stage>> {
+    rectangle "<$search{scale=1.4}>\nCode review\n(1 approval)" as review
+    rectangle "<$code_branch{scale=1.4}>\nMerge into main" as merge
+}
+
+' ---------- 4. CD ----------
+rectangle "<$github-actions{scale=1.2}>\n**④ CD — merge on main**" as cd <<stage>> {
+    rectangle "<$tags{scale=1.4}>\nRebuild + tag images\n(commit SHA)" as tag
+    rectangle "<$docker-icon{scale=1.2}>\nPush to GHCR" as ghcr
+    rectangle "<$user_check{scale=1.4}>\nManual approval\n(production env.)" as approve
+}
+
+' ---------- 5. OpenStack ----------
+rectangle "<$openstack{scale=2.2}>\n<size:44>**⑤ OpenStack**</size>\n<size:22>runner on mars-ops</size>" as os <<openstack>> {
+    rectangle "<$ansible{scale=1.2}>\nAnsible\ndocker compose pull + up -d\non each VM" as ansible
+    rectangle "<$database{scale=1.4}>\nDB migrations\n(Alembic)" as migrate
+    rectangle "<$heartbeat{scale=1.4}>\nSmoke tests\n/health · login · CSV upload" as smoke
+    rectangle "<$question_circle{scale=1.2}>\n**Smoke OK?**" as smokeok <<decision>>
+    rectangle "<$check_circle{scale=1.4}>\nDeployment\nvalidated" as done <<ok>>
+    rectangle "<$undo{scale=1.4}>\nRollback:\nredeploy previous tag" as rollback <<fail>>
+}
+
+' ---------- flow ----------
+' Each stage is one horizontal band (steps flow left → right);
+' the bands stack top → bottom, in pipeline order.
+push -right-> pr
+dev --> ci : PR opened
+checks -right-> build
+build -right-> itest
+itest -right-> green
+green -right-> blocked : <color:#C62828>**no**</color>
+ci --> rev : <color:#2E7D32>**all green**</color>
+review -right-> merge
+rev --> cd : merged
+tag -right-> ghcr
+ghcr -right-> approve
+cd --> os : approved
+ansible -right-> migrate
+migrate -right-> smoke
+smoke -right-> smokeok
+smokeok --> done : <color:#2E7D32>**yes**</color>
+smokeok --> rollback : <color:#C62828>**no**</color>
+
+@enduml

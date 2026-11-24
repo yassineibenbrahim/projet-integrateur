@@ -1,0 +1,83 @@
+@startuml deployment-backend-presentation-milestone-1
+!include <logos/openstack>
+!include <logos/nginx>
+!include <logos/python>
+!include <logos/postgresql>
+!include <tupadr3/font-awesome-5/globe>
+!include <tupadr3/font-awesome-5/spider>
+!include <tupadr3/font-awesome-5/clock>
+!include <tupadr3/font-awesome-5/filter>
+!include <tupadr3/font-awesome-5/chart_bar>
+!include <tupadr3/font-awesome-5/brain>
+!include <tupadr3/font-awesome-5/network_wired>
+
+title MARS — Backend detail (OpenStack private network)
+
+skinparam shadowing false
+skinparam defaultFontSize 24
+skinparam titleFontSize 36
+skinparam arrowFontSize 22
+skinparam arrowThickness 2
+skinparam nodesep 60
+skinparam ranksep 90
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+skinparam rectangleRoundCorner 12
+
+skinparam node {
+    FontSize 26
+    BorderThickness 2
+}
+skinparam node<<openstack>> {
+    BackgroundColor #FFF5F6
+    BorderColor #DA1A32
+    BorderThickness 4
+    FontColor #DA1A32
+    FontSize 34
+}
+skinparam node<<vm>> {
+    BackgroundColor #FFFFFF
+    BorderColor #DA1A32
+}
+hide stereotype
+
+left to right direction
+
+rectangle "<$nginx{scale=1.1}>\nmars-web\nNginx" as nginx
+cloud "<$globe{scale=1.4}>\nOnline sources" as sources
+
+node "<$openstack{scale=2.2}>\n<size:48>**OpenStack**</size>\n<size:24><$network_wired> private network · 4 VMs</size>" as openstack <<openstack>> {
+
+    node "<color:#DA1A32><size:20>OpenStack VM</size></color>\n**mars-api**\n<size:20>3 vCPU · 3 GB</size>" as vm2 <<vm>> {
+        rectangle "<$python{scale=1.4}>\nFastAPI\nauth · CSV upload\nresults · sorting" as api
+    }
+
+    node "<color:#DA1A32><size:20>OpenStack VM</size></color>\n**mars-scraper**\n<size:20>4 vCPU · 4 GB</size>" as vm3 <<vm>> {
+        rectangle "<$spider{scale=1.4}>\nScraper\nAPI clients · browser" as scraper
+        rectangle "<$clock{scale=1.4}>\nScheduler" as scheduler
+    }
+
+    node "<color:#DA1A32><size:20>OpenStack VM</size></color>\n**mars-analysis**\n<size:20>8 vCPU · 8 GB</size>" as vm4 <<vm>> {
+        rectangle "<$filter{scale=1.4}>\nPreprocessing" as prep
+        rectangle "<$chart_bar{scale=1.4}>\nDIMA / DISARM\nanalysis" as analysis
+        rectangle "<$brain{scale=1.4}>\nML\n(later phase)" as ml #EEEEEE
+    }
+
+    node "<color:#DA1A32><size:20>OpenStack VM</size></color>\n**mars-db**\n<size:20>4 vCPU · 4 GB</size>" as vm5 <<vm>> {
+        database "<$postgresql{scale=1.4}>\nPostgreSQL\naccounts · preprocessed\n· analyzed" as db
+    }
+}
+
+nginx --> api : /api/*
+api --> scraper : collection job
+scheduler --> scraper
+scraper --> sources : HTTPS
+api --> prep : CSV
+scraper --> prep : new data
+prep --> analysis
+analysis --> ml
+api --> db : SQL
+scraper --> db : SQL
+analysis --> db : SQL
+
+@enduml
