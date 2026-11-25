@@ -20,9 +20,9 @@ Préparation de la présentation orale pour le Jalon 1 en anglais.
   - [Organisation et gestion de projet](https://projet-integrateur-mars.atlassian.net/jira/software/projects/SCRUM/boards/1?filter=&groupBy=none&selectedIssue=SCRUM-36)
 
 #### Othmane Fath
-- **Réalisé :**
-- **Bloqué sur :**
-- **Lien ou trace (commits, PR, tickets Jira) :**
+- **Réalisé : Développement de mars-collect v1.0, le prototype de collecte de l’axe 1 du projet MARS. Mise en place de la collecte de données YouTube (commentaires, réponses et transcriptions) et de l’import CSV. Définition d’un schéma commun pour exporter les données en JSONL, avec pseudonymisation des identifiants et masquage des coordonnées dans les textes. Validation du flux d’import sur un jeu de données CSV de test.
+- **Bloqué sur : Aucun blocage pour le jalon 1. Les limites du prototype sont documentées dans data_engineering.md.
+- **Lien ou trace (commits, PR, tickets Jira) :**  [Mars-Collect](https://github.com/yassineibenbrahim/projet-integrateur/blob/main/docs/Jalon1/data_engineering.md)
 
 #### Abdelkarim Ameur
 - **Réalisé :**
